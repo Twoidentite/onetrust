@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clock In / Out</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f4f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+      color: #1a1a1a;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    h1 {
+      font-size: 15px;
+      font-weight: 500;
+      color: #888;
+      text-align: center;
+      margin-bottom: 2rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #clock-display {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    #live-time {
+      font-size: 64px;
+      font-weight: 300;
+      letter-spacing: -3px;
+      color: #1a1a1a;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #live-date {
+      font-size: 14px;
+      color: #888;
+      margin-top: 8px;
+    }
+
+    #status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    #status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ccc;
+      transition: background 0.3s;
+    }
+
+    #status-dot.in {
+      background: #1D9E75;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    #status-text {
+      font-size: 14px;
+      color: #888;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    #status-text.in { color: #1D9E75; }
+
+    #main-btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 500;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 1.25rem;
+      font-family: inherit;
+    }
+
+    #main-btn.clock-in {
+      background: #1D9E75;
+      color: #fff;
+    }
+
+    #main-btn.clock-in:hover { background: #17896A; }
+
+    #main-btn.clock-out {
+      background: #FAECE7;
+      color: #D85A30;
+      border: 1px solid #f0c4b0;
+    }
+
+    #main-btn.clock-out:hover { background: #f5d8ce; }
+
+    #session-card {
+      background: #fff;
+      border: 1px solid #e8e7e3;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+
+    #session-card.visible { display: block; }
+
+    #session-label {
+      font-size: 11px;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 6px;
+    }
+
+    #session-in {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    #session-elapsed {
+      font-size: 26px;
+      font-weight: 500;
+      color: #1a1a1a;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #log-section { }
+
+    #log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    #log-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    #clear-btn {
+      font-size: 13px;
+      color: #aaa;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+
+    #clear-btn:hover { background: #eee; color: #666; }
+
+    #total-bar {
+      background: #fff;
+      border: 1px solid #e8e7e3;
+      border-radius: 10px;
+      padding: 10px 16px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    #total-label { font-size: 13px; color: #888; }
+    #total-value { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+
+    #log-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .log-entry {
+      background: #fff;
+      border: 1px solid #e8e7e3;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .log-date { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+
+    .log-times-group { display: flex; flex-direction: column; gap: 3px; }
+
+    .log-times {
+      font-size: 13px;
+      color: #888;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .log-times i { font-size: 13px; }
+
+    .log-duration {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      text-align: right;
+    }
+
+    #empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: #bbb;
+      font-size: 14px;
+    }
+
+    @media (max-width: 480px) {
+      #live-time { font-size: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Time Tracker</h1>
+
+    <div id="clock-display">
+      <div id="live-time">00:00:00</div>
+      <div id="live-date"></div>
+    </div>
+
+    <div id="status-bar">
+      <div id="status-dot"></div>
+      <span id="status-text">Clocked out</span>
+    </div>
+
+    <button id="main-btn" class="clock-in">Clock in</button>
+
+    <div id="session-card">
+      <div id="session-label">Current session</div>
+      <div id="session-in"></div>
+      <div id="session-elapsed">0:00:00</div>
+    </div>
+
+    <div id="log-section">
+      <div id="log-header">
+        <span id="log-title">Time log</span>
+        <button id="clear-btn" onclick="clearLog()">Clear all</button>
+      </div>
+      <div id="total-bar">
+        <span id="total-label">Total hours today</span>
+        <span id="total-value"></span>
+      </div>
+      <div id="log-list"></div>
+      <div id="empty-state">No entries yet — clock in to get started</div>
+    </div>
+  </div>
+
+  <script>
+    let clockedIn = false;
+    let clockInTime = null;
+    let log = JSON.parse(localStorage.getItem('clocklog') || '[]');
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function formatTime(date) {
+      return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function formatTimeShort(date) {
+      let h = date.getHours(), m = date.getMinutes();
+      let ampm = h >= 12 ? 'pm' : 'am';
+      h = h % 12 || 12;
+      return `${h}:${pad(m)} ${ampm}`;
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function formatDateShort(date) {
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function elapsed(ms) {
+      let s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
+      return `${h}:${pad(m % 60)}:${pad(s % 60)}`;
+    }
+
+    function elapsedHM(ms) {
+      let s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
+      if (h === 0) return `${m % 60}m`;
+      return `${h}h ${pad(m % 60)}m`;
+    }
+
+    function updateClock() {
+      let now = new Date();
+      document.getElementById('live-time').textContent = formatTime(now);
+      document.getElementById('live-date').textContent = formatDate(now);
+      if (clockedIn && clockInTime) {
+        document.getElementById('session-elapsed').textContent = elapsed(now - clockInTime);
+      }
+    }
+
+    function clockIn() {
+      clockedIn = true;
+      clockInTime = new Date();
+      document.getElementById('main-btn').textContent = 'Clock out';
+      document.getElementById('main-btn').className = 'clock-out';
+      document.getElementById('status-dot').className = 'in';
+      document.getElementById('status-text').className = 'in';
+      document.getElementById('status-text').textContent = 'Clocked in';
+      document.getElementById('session-card').className = 'visible';
+      document.getElementById('session-in').textContent = `In at ${formatTimeShort(clockInTime)}`;
+    }
+
+    function clockOut() {
+      let now = new Date();
+      let ms = now - clockInTime;
+      log.unshift({ date: clockInTime.toISOString(), out: now.toISOString(), ms });
+      try { localStorage.setItem('clocklog', JSON.stringify(log)); } catch(e) {}
+      clockedIn = false;
+      clockInTime = null;
+      document.getElementById('main-btn').textContent = 'Clock in';
+      document.getElementById('main-btn').className = 'clock-in';
+      document.getElementById('status-dot').className = '';
+      document.getElementById('status-text').className = '';
+      document.getElementById('status-text').textContent = 'Clocked out';
+      document.getElementById('session-card').className = '';
+      renderLog();
+    }
+
+    document.getElementById('main-btn').addEventListener('click', () => {
+      if (!clockedIn) clockIn(); else clockOut();
+    });
+
+    function clearLog() {
+      if (!confirm('Clear all time log entries?')) return;
+      log = [];
+      try { localStorage.removeItem('clocklog'); } catch(e) {}
+      renderLog();
+    }
+
+    function todayMs() {
+      let today = new Date().toDateString();
+      return log.filter(e => new Date(e.date).toDateString() === today).reduce((a, e) => a + e.ms, 0);
+    }
+
+    function renderLog() {
+      let list = document.getElementById('log-list');
+      let empty = document.getElementById('empty-state');
+      let totalBar = document.getElementById('total-bar');
+      if (log.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        totalBar.style.display = 'none';
+        return;
+      }
+      empty.style.display = 'none';
+      let tms = todayMs();
+      if (tms > 0) {
+        totalBar.style.display = 'flex';
+        document.getElementById('total-value').textContent = elapsedHM(tms);
+      } else {
+        totalBar.style.display = 'none';
+      }
+      list.innerHTML = log.map(e => {
+        let inT = new Date(e.date), outT = new Date(e.out);
+        return `<div class="log-entry">
+          <div class="log-date">${formatDateShort(inT)}</div>
+          <div class="log-times-group">
+            <span class="log-times"><i class="ti ti-login"></i> ${formatTimeShort(inT)}</span>
+            <span class="log-times"><i class="ti ti-logout"></i> ${formatTimeShort(outT)}</span>
+          </div>
+          <div class="log-duration">${elapsedHM(e.ms)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    renderLog();
+    setInterval(updateClock, 1000);
+    updateClock();
+  </script>
+</body>
+</html>
