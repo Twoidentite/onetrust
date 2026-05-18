@@ -1,0 +1,7 @@
+create table clock_entries (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  clock_in timestamptz not null,
+  clock_out timestamptz,
+  created_at timestamptz default now()
+);
